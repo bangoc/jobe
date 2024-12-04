@@ -21,19 +21,25 @@ class ResultObject
     public string $cmpinfo;
     public string $stdout;
     public string $stderr;
+    public string $jobtime;
+    public string $mytime;
 
     public function __construct(
         $run_id,
         $outcome,
         $cmpinfo = '',
         $stdout = '',
-        $stderr = ''
+        $stderr = '',
+        $jobtime = '',
+        $mytime = ''
     ) {
         $this->run_id = $run_id;   // A unique identifying string
         $this->outcome = $outcome; // Outcome of this job
         $this->cmpinfo = $this->clean($cmpinfo);
         $this->stdout = $this->clean($stdout);
         $this->stderr = $this->clean($stderr);
+        $this->jobtime = $jobtime;
+        $this->mytime = $mytime;
     }
 
 

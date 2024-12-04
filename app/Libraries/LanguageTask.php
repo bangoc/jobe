@@ -71,6 +71,8 @@ abstract class LanguageTask
     public int $signal = 0;
     public string $stdout = '';    // Output from execution
     public string $stderr = '';
+    public string $jobtime = '';
+    public string $mytime = '';
     public int $result = LanguageTask::RESULT_INTERNAL_ERR;  // Should get overwritten
     public ?string $workdir = '';   // The temporary working directory created in constructor
 
@@ -160,7 +162,7 @@ abstract class LanguageTask
     {
         try {
             $cmd = implode(' ', $this->getRunCommand());
-            list($this->stdout, $this->stderr) = $this->runInSandbox($cmd, false, $this->input);
+            list($this->stdout, $this->stderr, $this->jobtime, $this->mytime) = $this->runInSandbox($cmd, false, $this->input);
             $this->stderr = $this->filteredStderr();
             $this->diagnoseResult();  // Analyse output and set result
         } catch (OverloadException $e) {
@@ -309,7 +311,8 @@ abstract class LanguageTask
                 "--filesize=$filesize",    // Max file sizes
                 "--nproc=$numProcs",       // Max num processes/threads for this *user*
                 "--no-core",
-                "--streamsize=$streamsize");   // Max stdout/stderr sizes
+                "--streamsize=$streamsize", // Max stdout/stderr sizes
+                "--outtime=prog.time");   
 
         // Prepend CPU pinning command if enabled
 
@@ -338,12 +341,17 @@ abstract class LanguageTask
         exec('bash prog.cmd');
 
         $output = file_get_contents("$workdir/prog.out");
+        $jobtime = file_get_contents("$workdir/prog.time");
+        $mytime = '(not set)';
+        if (file_exists("$workdir/custom.time")) {
+            $mytime = file_get_contents("$workdir/custom.time");
+        }
         if (file_exists("{$this->workdir}/prog.err")) {
             $stderr = file_get_contents("{$this->workdir}/prog.err");
         } else {
             $stderr = '';
         }
-        return array($output, $stderr);
+        return array($output, $stderr, $jobtime, $mytime);
     }
 
 
@@ -501,7 +509,9 @@ abstract class LanguageTask
             $this->result,
             $this->cmpinfo,
             $this->filteredStdout(),
-            $this->filteredStderr()
+            $this->filteredStderr(),
+            $this->jobtime,
+            $this->mytime
         );
     }
 
